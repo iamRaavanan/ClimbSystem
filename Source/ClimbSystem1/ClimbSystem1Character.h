@@ -69,5 +69,8 @@ public:
 
 private:
 	FHitResult Hit;
+	bool bIsClimbing;
+	FVector HeadHitLocation;
+	FVector HeadHitNormal;
 };
 

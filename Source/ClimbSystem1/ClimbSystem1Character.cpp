@@ -109,38 +109,43 @@ void AClimbSystem1Character::CustomJump()
 	FVector End;	
 	bool isHeadHit, isPelvisHit;
 	FCollisionQueryParams CollisionQueryParam;
-	Start = GetMesh()->GetSocketLocation(TEXT("head"));
+	Start = GetMesh()->GetSocketLocation(TEXT("headSocket"));
 	End = Start + (GetActorForwardVector() * 200);
 	isHeadHit = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, CollisionQueryParam);
 	if (isHeadHit)
 	{
 		DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 2.0f);
-		Start = GetMesh()->GetSocketLocation(TEXT("pelvis"));
+		HeadHitLocation = Hit.Location;
+		HeadHitNormal = Hit.Normal;
+		Start = GetMesh()->GetSocketLocation(TEXT("pelvisSocket"));
 		End = Start + (GetActorForwardVector() * 200);
 		isPelvisHit = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, CollisionQueryParam);
 		if (isPelvisHit)
 		{
 			DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 2.0f);
 			FTimerHandle TempTimerHanlde;
-			GetWorldTimerManager().SetTimer(TempTimerHanlde, this, &AClimbSystem1Character::InitClimb, 0.4f);			
+			GetWorldTimerManager().SetTimer(TempTimerHanlde, this, &AClimbSystem1Character::InitClimb, 0.1f);
 		}
 	}
-	
 }
 
 void AClimbSystem1Character::InitClimb()
 {
+	bIsClimbing = true;
 	GetCharacterMovement()->StopMovementImmediately();
 	FLatentActionInfo LatentInfo;
 	LatentInfo.CallbackTarget = this;
 	GetCharacterMovement()->SetMovementMode(MOVE_Flying);
-	FVector TargetRelativeLoc = Hit.Location + (Hit.Normal * 160.0f);
-	FRotator TargetRelativeRot = UKismetMathLibrary::MakeRotFromX(Hit.Normal * -1);
+	FVector TargetRelativeLoc = HeadHitLocation + (HeadHitNormal * 10.0f);
+	TargetRelativeLoc.Y += 50.0f;
+	FRotator TargetRelativeRot = UKismetMathLibrary::MakeRotFromX(HeadHitNormal * -1.0f);
 	UKismetSystemLibrary::MoveComponentTo(GetCapsuleComponent(), TargetRelativeLoc, FRotator(0, TargetRelativeRot.Yaw, 0), false, false, 0.4f, false, EMoveComponentAction::Type::Move, LatentInfo);
 }
 
 void AClimbSystem1Character::MoveForward(float Value)
 {
+	if(bIsClimbing)
+		return;
 	if ((Controller != nullptr) && (Value != 0.0f))
 	{
 		// find out which way is forward
@@ -155,6 +160,8 @@ void AClimbSystem1Character::MoveForward(float Value)
 
 void AClimbSystem1Character::MoveRight(float Value)
 {
+	if (bIsClimbing)
+		return;
 	if ( (Controller != nullptr) && (Value != 0.0f) )
 	{
 		// find out which way is right
