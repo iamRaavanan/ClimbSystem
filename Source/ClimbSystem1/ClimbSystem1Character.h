@@ -30,8 +30,13 @@ protected:
 
 	void CustomJump ();
 
+	UFUNCTION(BlueprintCallable, Category = "Climb")
+	void TraceFromHeadAndPelvis(FVector Offset);
+
 	void InitClimb ();
 
+	UFUNCTION(BlueprintImplementableEvent, Category = "Climb")
+	void ClimbMovement (float Value, FVector Direction);
 	/** Called for forwards/backward input */
 	void MoveForward(float Value);
 
@@ -60,16 +65,27 @@ protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	// End of APawn interface
+	UPROPERTY(BlueprintReadOnly, Category = "Climb")
+	FHitResult HeadHit;
 
+	UPROPERTY(BlueprintReadOnly, Category = "Climb")
+	FHitResult PelvisHit;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Climb")
+	float WallDistance;
 public:
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 
-private:
-	FHitResult Hit;
+private:	
+
+
 	bool bIsClimbing;
+	bool bIsHeadHit;
+	bool bIsPelvisHit;
+
 	FVector HeadHitLocation;
 	FVector HeadHitNormal;
 };

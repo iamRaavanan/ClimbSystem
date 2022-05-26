@@ -104,27 +104,46 @@ void AClimbSystem1Character::LookUpAtRate(float Rate)
 
 void AClimbSystem1Character::CustomJump()
 {
-	Jump();
-	FVector Start;
-	FVector End;	
-	bool isHeadHit, isPelvisHit;
-	FCollisionQueryParams CollisionQueryParam;
-	Start = GetMesh()->GetSocketLocation(TEXT("headSocket"));
-	End = Start + (GetActorForwardVector() * 200);
-	isHeadHit = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, CollisionQueryParam);
-	if (isHeadHit)
+	if (bIsClimbing)
 	{
+		bIsClimbing = bIsHeadHit = bIsPelvisHit = false;
+		StopJumping();
+		GetCharacterMovement()->SetMovementMode(MOVE_Falling);
+		GetCharacterMovement()->bOrientRotationToMovement = true;
+		return;
+	}
+	Jump();
+	TraceFromHeadAndPelvis(FVector(0,0,0));
+	if (bIsHeadHit)
+	{
+		FTimerHandle TempTimerHanlde;
+		GetWorldTimerManager().SetTimer(TempTimerHanlde, this, &AClimbSystem1Character::InitClimb, 0.1f);
+	}
+}
+
+void AClimbSystem1Character::TraceFromHeadAndPelvis(FVector Offset)
+{
+	FVector Start;
+	FVector End;
+	FHitResult Hit;
+	FCollisionQueryParams CollisionQueryParam;
+	// Commented the pelvisSocket based location. Due to up wall movement. As the difference between pelvis and actor location differs
+	Start = GetActorLocation()/*GetMesh()->GetSocketLocation(TEXT("pelvisSocket"))*/ + Offset;	
+	End = Start + (GetActorForwardVector() * 200);
+	bIsPelvisHit = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, CollisionQueryParam);
+	if (bIsPelvisHit)
+	{
+		PelvisHit = Hit;
 		DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 2.0f);
+		Start = GetMesh()->GetSocketLocation(TEXT("headSocket")) + Offset;
+		End = Start + (GetActorForwardVector() * 200);
+		bIsHeadHit = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, CollisionQueryParam);
 		HeadHitLocation = Hit.Location;
 		HeadHitNormal = Hit.Normal;
-		Start = GetMesh()->GetSocketLocation(TEXT("pelvisSocket"));
-		End = Start + (GetActorForwardVector() * 200);
-		isPelvisHit = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, CollisionQueryParam);
-		if (isPelvisHit)
+		if (bIsHeadHit)
 		{
-			DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 2.0f);
-			FTimerHandle TempTimerHanlde;
-			GetWorldTimerManager().SetTimer(TempTimerHanlde, this, &AClimbSystem1Character::InitClimb, 0.1f);
+			HeadHit = Hit;
+			DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 2.0f);			
 		}
 	}
 }
@@ -133,11 +152,12 @@ void AClimbSystem1Character::InitClimb()
 {
 	bIsClimbing = true;
 	GetCharacterMovement()->StopMovementImmediately();
+	GetCharacterMovement()->bOrientRotationToMovement = false;
 	FLatentActionInfo LatentInfo;
 	LatentInfo.CallbackTarget = this;
 	GetCharacterMovement()->SetMovementMode(MOVE_Flying);
-	FVector TargetRelativeLoc = HeadHitLocation + (HeadHitNormal * 10.0f);
-	TargetRelativeLoc.Y += 50.0f;
+	UE_LOG(LogTemp, Warning, TEXT("HeadHitLocation : %s , Normal : %s"), *HeadHitLocation.ToString(), *HeadHitNormal.ToString());
+	FVector TargetRelativeLoc = HeadHitLocation + (HeadHitNormal * WallDistance);
 	FRotator TargetRelativeRot = UKismetMathLibrary::MakeRotFromX(HeadHitNormal * -1.0f);
 	UKismetSystemLibrary::MoveComponentTo(GetCapsuleComponent(), TargetRelativeLoc, FRotator(0, TargetRelativeRot.Yaw, 0), false, false, 0.4f, false, EMoveComponentAction::Type::Move, LatentInfo);
 }
@@ -145,7 +165,11 @@ void AClimbSystem1Character::InitClimb()
 void AClimbSystem1Character::MoveForward(float Value)
 {
 	if(bIsClimbing)
+	{
+		if (Value != 0)
+			ClimbMovement(Value, GetActorUpVector());
 		return;
+	}
 	if ((Controller != nullptr) && (Value != 0.0f))
 	{
 		// find out which way is forward
@@ -161,7 +185,11 @@ void AClimbSystem1Character::MoveForward(float Value)
 void AClimbSystem1Character::MoveRight(float Value)
 {
 	if (bIsClimbing)
+	{
+		if(Value != 0)
+			ClimbMovement(Value, GetActorRightVector());
 		return;
+	}
 	if ( (Controller != nullptr) && (Value != 0.0f) )
 	{
 		// find out which way is right
