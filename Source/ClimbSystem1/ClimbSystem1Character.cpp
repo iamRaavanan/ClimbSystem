@@ -135,7 +135,7 @@ void AClimbSystem1Character::TraceFromHeadAndPelvis(FVector Offset)
 	if (bIsPelvisHit)
 	{
 		PelvisHit = Hit;
-		DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 2.0f);
+		//DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 2.0f);
 		Start = GetMesh()->GetSocketLocation(TEXT("headSocket")) + Offset;
 		End = Start + (GetActorForwardVector() * 200);
 		bIsHeadHit = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, CollisionQueryParam);
@@ -144,7 +144,7 @@ void AClimbSystem1Character::TraceFromHeadAndPelvis(FVector Offset)
 		if (bIsHeadHit)
 		{
 			HeadHit = Hit;
-			DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 2.0f);			
+			//DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 2.0f);			
 		}
 		else
 		{
