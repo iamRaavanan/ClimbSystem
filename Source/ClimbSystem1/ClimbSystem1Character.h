@@ -27,7 +27,7 @@ public:
 
 protected:
 
-
+	UFUNCTION(BlueprintCallable, Category = "Climb")
 	void CustomJump ();
 
 	UFUNCTION(BlueprintCallable, Category = "Climb")
@@ -37,6 +37,12 @@ protected:
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "Climb")
 	void ClimbMovement (float Value, FVector Direction);
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Climb")
+	void BackToGroundFromClimb ();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Climb")
+	void MoveToTopEdge(FVector HeadLocation);
 	/** Called for forwards/backward input */
 	void MoveForward(float Value);
 

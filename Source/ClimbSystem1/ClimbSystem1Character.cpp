@@ -110,6 +110,7 @@ void AClimbSystem1Character::CustomJump()
 		StopJumping();
 		GetCharacterMovement()->SetMovementMode(MOVE_Falling);
 		GetCharacterMovement()->bOrientRotationToMovement = true;
+		BackToGroundFromClimb ();
 		return;
 	}
 	Jump();
@@ -145,6 +146,12 @@ void AClimbSystem1Character::TraceFromHeadAndPelvis(FVector Offset)
 			HeadHit = Hit;
 			DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 2.0f);			
 		}
+		else
+		{
+			FVector Location = Start + Offset;
+			Location.Z += GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+			MoveToTopEdge(Location);
+		}
 	}
 }
 
@@ -159,7 +166,7 @@ void AClimbSystem1Character::InitClimb()
 	UE_LOG(LogTemp, Warning, TEXT("HeadHitLocation : %s , Normal : %s"), *HeadHitLocation.ToString(), *HeadHitNormal.ToString());
 	FVector TargetRelativeLoc = HeadHitLocation + (HeadHitNormal * WallDistance);
 	FRotator TargetRelativeRot = UKismetMathLibrary::MakeRotFromX(HeadHitNormal * -1.0f);
-	UKismetSystemLibrary::MoveComponentTo(GetCapsuleComponent(), TargetRelativeLoc, FRotator(0, TargetRelativeRot.Yaw, 0), false, false, 0.4f, false, EMoveComponentAction::Type::Move, LatentInfo);
+	UKismetSystemLibrary::MoveComponentTo(GetCapsuleComponent(), TargetRelativeLoc, TargetRelativeRot, false, false, 0.4f, false, EMoveComponentAction::Type::Move, LatentInfo);
 }
 
 void AClimbSystem1Character::MoveForward(float Value)
